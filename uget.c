@@ -72,20 +72,18 @@ int download(int writefd, char *hostname, char *uri) {
     return ERR_SEND;
 
   int header = 1;
-  int cnt = 0;
   int nrecvd;
-  while ((nrecvd = recv(s, buf, sizeof(buf) - 1, 0))) {
-    buf[nrecvd] = 0;
+  while ((nrecvd = recv(s, buf, sizeof(buf), 0))) {
     char *ptr = buf;
     if (header) {
-      ptr = strnstr(buf, "\r\n\r\n", sizeof(buf));
+      ptr = strstr(buf, "\r\n\r\n");
       if (!ptr)
         continue;
 
       header = 0;
-      nrecvd -= ptr - buf + 4;
+      ptr+=4;
+      nrecvd -= ptr - buf;
     }
-    cnt += nrecvd;
     write(writefd, ptr, nrecvd);
   }
 
