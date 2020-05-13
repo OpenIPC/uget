@@ -1,9 +1,13 @@
+#include <stddef.h>
+#include <stdlib.h>
+#include <string.h>
+
 #include <arpa/inet.h>
 #include <netdb.h>
-#include <stddef.h>
-#include <string.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
 #include <sys/types.h>
+#include <sys/wait.h>
 #include <unistd.h>
 
 #define ERR_GENERAL 1
@@ -81,7 +85,7 @@ int download(int writefd, char *hostname, char *uri) {
         continue;
 
       header = 0;
-      ptr+=4;
+      ptr += 4;
       nrecvd -= ptr - buf;
     }
     write(writefd, ptr, nrecvd);
@@ -94,8 +98,19 @@ int main(int argc, char **argv) {
   if (argc < 2)
     return ERR_USAGE;
 
-  char *url = argv[1];
+  int url_arg = 1;
+  int run_program = 0;
+  if (argc == 3) {
+    if (strcmp("run", argv[1]) != 0)
+      return ERR_USAGE;
+    run_program = 1;
+    url_arg++;
+  }
+
+  char *hostname = argv[url_arg];
   char *uri = NULL;
+
+  char *url = hostname;
   while (*url) {
     if (*url == '/') {
       *url++ = 0;
@@ -108,5 +123,31 @@ int main(int argc, char **argv) {
   if (!uri)
     return ERR_BADURL;
 
-  return download(1, argv[1], uri);
+  int fd = STDOUT_FILENO;
+  char temfname[] = "/tmp/prefXXXXXX";
+  if (run_program) {
+    fd = mkstemp(temfname);
+  }
+
+  int ret = download(fd, hostname, uri);
+  if (ret)
+    return ret;
+
+  if (run_program) {
+    fchmod(fd, S_IRUSR | S_IXUSR);
+    close(fd);
+    int child = fork();
+    if (child) {
+      int wstatus;
+
+      wait(&wstatus);
+      ret = WEXITSTATUS(wstatus);
+      unlink(temfname);
+    } else {
+      execlp(temfname, temfname, (char*)NULL);
+      return EXIT_FAILURE;
+    }
+  }
+
+  return ret;
 }
