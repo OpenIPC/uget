@@ -1,4 +1,5 @@
 #include <stddef.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -20,9 +21,13 @@
 
 #define NDEBUG
 
-#ifndef NDEBUG
-#include <stdio.h>
-#endif
+int get_http_respcode(const char* inpbuf) {
+  char proto[4096], descr[4096];
+  int code;
+
+  if (sscanf(inpbuf, "%s %d %s", proto, &code, descr) < 2) return -1;
+  return code;
+}
 
 int download(int writefd, char *hostname, char *uri) {
   int ret = ERR_GENERAL;
@@ -83,6 +88,9 @@ int download(int writefd, char *hostname, char *uri) {
       ptr = strstr(buf, "\r\n\r\n");
       if (!ptr)
         continue;
+
+      int rcode = get_http_respcode(buf);
+      if (rcode/ 100 != 2) return rcode / 100 * 10 + rcode % 10;
 
       header = 0;
       ptr += 4;
