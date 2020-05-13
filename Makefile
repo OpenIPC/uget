@@ -1,4 +1,10 @@
 CFLAGS=-O3
-CC=arm-hisiv510-linux-gcc
+CROSS_COMPILE=arm-hisiv510-linux-
+CC=$(CROSS_COMPILE)gcc
+STRIP=$(CROSS_COMPILE)strip
 
 all: uget
+
+uget: uget.o
+	$(CC) $(CFLAGS) -o $@ $^
+	$(STRIP) $@
