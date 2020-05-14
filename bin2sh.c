@@ -13,15 +13,17 @@ int main(int argc, char **argv) {
     exit(EXIT_FAILURE);
   }
 
-  unsigned char buf[100];
+  unsigned char buf[250];
   int nlen;
 
   const char *filename = argv[1];
   int line = 0;
   const char *newf = ">";
   const char *exst = ">>";
-  fprintf(stdout, "rm %s; while IFS= read -s -r line; do $line>>%s; done\n",
-          filename, filename);
+  //fprintf(stdout, "rm %s; while IFS= read -s -r line; do $line>>%s; done\n",
+  //        filename, filename);
+
+  fprintf(stdout, "cd /tmp;F=%s;true>$F;chmod +x $F\n", filename);
 
   while ((nlen = fread(buf, 1, sizeof(buf), f))) {
     line++;
@@ -29,10 +31,9 @@ int main(int argc, char **argv) {
     for (int i = 0; i < nlen; i++) {
       fprintf(stdout, "\\x%02X", buf[i]);
     }
-    //fprintf(stdout, "\"%s%s\n", line == 1 ? newf : exst, filename);
-    fprintf(stdout, "\"\n");
+    fprintf(stdout, "\"%s%s\n", line == 1 ? newf : exst, "$F");
   }
-  fprintf(stdout, "\n\004\n\nchmod +x %s\n\n", filename);
+  fprintf(stdout, "\n");
 
   fclose(f);
 }

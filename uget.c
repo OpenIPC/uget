@@ -17,15 +17,15 @@
 #define ERR_CONNECT 4
 #define ERR_SEND 5
 #define ERR_USAGE 6
-#define ERR_BADURL 7
 
 #define NDEBUG
 
-int get_http_respcode(const char* inpbuf) {
+int get_http_respcode(const char *inpbuf) {
   char proto[4096], descr[4096];
   int code;
 
-  if (sscanf(inpbuf, "%s %d %s", proto, &code, descr) < 2) return -1;
+  if (sscanf(inpbuf, "%s %d %s", proto, &code, descr) < 2)
+    return -1;
   return code;
 }
 
@@ -71,7 +71,9 @@ int download(int writefd, char *hostname, char *uri) {
   }
 
   char buf[4096] = "GET /";
-  strncat(buf, uri, sizeof(buf) - strlen(buf) - 1);
+  if (uri) {
+    strncat(buf, uri, sizeof(buf) - strlen(buf) - 1);
+  }
   strncat(buf, " HTTP/1.0\r\nHost: ", sizeof(buf) - strlen(buf) - 1);
   strncat(buf, hostname, sizeof(buf) - strlen(buf) - 1);
   strncat(buf, "\r\n\r\n", sizeof(buf) - strlen(buf) - 1);
@@ -90,7 +92,8 @@ int download(int writefd, char *hostname, char *uri) {
         continue;
 
       int rcode = get_http_respcode(buf);
-      if (rcode/ 100 != 2) return rcode / 100 * 10 + rcode % 10;
+      if (rcode / 100 != 2)
+        return rcode / 100 * 10 + rcode % 10;
 
       header = 0;
       ptr += 4;
@@ -128,9 +131,6 @@ int main(int argc, char **argv) {
     url++;
   }
 
-  if (!uri)
-    return ERR_BADURL;
-
   int fd = STDOUT_FILENO;
   char temfname[] = "/tmp/ugetXXXXXX";
   if (run_program) {
@@ -152,7 +152,7 @@ int main(int argc, char **argv) {
       ret = WEXITSTATUS(wstatus);
       unlink(temfname);
     } else {
-      execlp(temfname, temfname, (char*)NULL);
+      execlp(temfname, temfname, (char *)NULL);
       return EXIT_FAILURE;
     }
   }
