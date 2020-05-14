@@ -38,8 +38,12 @@ int download(int writefd, char *hostname, char *uri) {
   hints.ai_family = PF_UNSPEC;
   hints.ai_socktype = SOCK_STREAM;
   int err = getaddrinfo(hostname, "http", &hints, &res0);
-  if (err)
+  if (err) {
+#ifndef NDEBUG
+    fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(err));
+#endif
     return ERR_GETADDRINFO;
+  }
 
   int s = -1;
   for (res = res0; res; res = res->ai_next) {
@@ -53,7 +57,7 @@ int download(int writefd, char *hostname, char *uri) {
     char buf[256];
     inet_ntop(res->ai_family, &((struct sockaddr_in *)res->ai_addr)->sin_addr,
               buf, sizeof(buf));
-    printf("Connect to %s\n", buf);
+    fprintf(stderr, "Connecting to %s...\n", buf);
 #endif
 
     if (connect(s, res->ai_addr, res->ai_addrlen) < 0) {
