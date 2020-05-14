@@ -18,7 +18,7 @@
 #define ERR_SEND 5
 #define ERR_USAGE 6
 
-#define NDEBUG
+//#define NDEBUG
 
 int get_http_respcode(const char *inpbuf) {
   char proto[4096], descr[4096];
@@ -139,7 +139,7 @@ int main(int argc, char **argv) {
 
   int ret = download(fd, hostname, uri);
   if (ret)
-    return ret;
+    goto cleanup;
 
   if (run_program) {
     fchmod(fd, S_IRUSR | S_IXUSR);
@@ -150,12 +150,15 @@ int main(int argc, char **argv) {
 
       wait(&wstatus);
       ret = WEXITSTATUS(wstatus);
-      unlink(temfname);
     } else {
       execlp(temfname, temfname, (char *)NULL);
       return EXIT_FAILURE;
     }
   }
+
+cleanup:
+  if (run_program)
+    unlink(temfname);
 
   return ret;
 }
