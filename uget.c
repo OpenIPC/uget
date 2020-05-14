@@ -18,7 +18,7 @@
 #define ERR_SEND 5
 #define ERR_USAGE 6
 
-//#define NDEBUG
+#define NDEBUG
 
 int get_http_respcode(const char *inpbuf) {
   char proto[4096], descr[4096];
@@ -37,7 +37,7 @@ int download(int writefd, char *hostname, char *uri) {
   memset(&hints, 0, sizeof(hints));
   hints.ai_family = PF_UNSPEC;
   hints.ai_socktype = SOCK_STREAM;
-  int err = getaddrinfo(hostname, "http", &hints, &res0);
+  int err = getaddrinfo(hostname, "80", &hints, &res0);
   if (err) {
 #ifndef NDEBUG
     fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(err));
