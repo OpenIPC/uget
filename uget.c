@@ -132,7 +132,7 @@ int main(int argc, char **argv) {
     return ERR_BADURL;
 
   int fd = STDOUT_FILENO;
-  char temfname[] = "/tmp/prefXXXXXX";
+  char temfname[] = "/tmp/ugetXXXXXX";
   if (run_program) {
     fd = mkstemp(temfname);
   }

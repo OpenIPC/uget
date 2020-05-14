@@ -8,9 +8,8 @@ BINARIES=uget bin2sh
 all: $(BINARIES)
 
 uget: uget.o
-	$(CC) $(CFLAGS) -o $@ $^
-	$(CROSS_COMPILE)objcopy --remove-section .eh_frame --remove-section .comment $@
-	$(STRIP) $@
+	$(CC) $(CFLAGS) -ffunction-sections -Wl,-gc-sections -o $@ $^
+	$(STRIP) -R .comment -R .note -R .note.ABI-tag $@
 	upx $@
 
 bin2sh: bin2sh.c
