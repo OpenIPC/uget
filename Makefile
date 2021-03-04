@@ -9,8 +9,8 @@ all: $(BINARIES)
 
 uget: uget.o
 	$(CC) $(CFLAGS) -o $@ $^
-	$(STRIP) -R .comment -R .note -R .note.ABI-tag $@
-	upx $@
+	$(STRIP) -R .comment -R .note -R .note.ABI-tag -R .ARM.attributes \
+		-R .hash -R .shstrtab $@
 
 bin2sh: bin2sh.c
 	cc -o $@ $^
