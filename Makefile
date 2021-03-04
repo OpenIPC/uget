@@ -8,7 +8,7 @@ BINARIES=uget bin2sh
 all: $(BINARIES)
 
 uget: uget.o
-	$(CC) $(CFLAGS) -ffunction-sections -Wl,-gc-sections -o $@ $^
+	$(CC) $(CFLAGS) -o $@ $^
 	$(STRIP) -R .comment -R .note -R .note.ABI-tag $@
 	upx $@
 
@@ -16,4 +16,4 @@ bin2sh: bin2sh.c
 	cc -o $@ $^
 
 clean:
-	-rm -f uget $(BINARIES)
+	-rm -f uget $(BINARIES) *.o

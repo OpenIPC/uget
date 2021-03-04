@@ -74,7 +74,9 @@ int download(int writefd, char *hostname, char *uri) {
     return ret;
   }
 
-  char buf[4096] = "GET /";
+  char buf[4096];
+  // use the hack to save some space in .rodata
+  strcpy(buf, "GET /");
   if (uri) {
     strncat(buf, uri, sizeof(buf) - strlen(buf) - 1);
   }
