@@ -3,12 +3,12 @@
 
 const char *trtable[256] = {
     "\\0", // 0
-    NULL, // 1
-    NULL, // 2
-    NULL, // 3
-    NULL, // 4
-    NULL, // 5
-    NULL, // 6
+    NULL,  // 1
+    NULL,  // 2
+    NULL,  // 3
+    NULL,  // 4
+    NULL,  // 5
+    NULL,  // 6
     "\\a", // 7
     "\\b", // 8
     "\\t", // 9
@@ -50,18 +50,19 @@ int main(int argc, char **argv) {
       chout += fprintf(stdout, "printf \"");
       line++;
     }
-    if (trtable[byte]) {
+    if (byte == '"')
+      chout += fprintf(stdout, "\"");
+    else if (trtable[byte])
       chout += fprintf(stdout, "%s", trtable[byte]);
-    } else {
-      chout += fprintf(stdout, "\\x%.2X", byte);
-    }
+    else
+      chout += fprintf(stdout, "\\x%X", byte);
     if (chout > SHELL_INPUT_MAX) {
       fprintf(stdout, "\"%s%s\n", line == 1 ? newf : exst, "$F");
       chout = 0;
     }
   }
   if (chout) {
-      fprintf(stdout, "\"%s%s\n", line == 1 ? newf : exst, "$F");
+    fprintf(stdout, "\"%s%s\n", line == 1 ? newf : exst, "$F");
   }
   fprintf(stdout, "\n");
 
