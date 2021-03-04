@@ -166,3 +166,28 @@ cleanup:
 
   return ret;
 }
+
+#include <linux/unistd.h>
+static inline void myexit(int status) {
+  asm volatile("mov      r0, %0\n\t"
+               "mov    r7, %1\n\t"
+               "swi    #7\n\t"
+               :
+               : "r"(status), "Ir"(__NR_exit)
+               : "r0", "r7");
+}
+
+/* Wrapper for main return code. */
+void __attribute__((unused)) estart(int argc, char *argv[]) {
+  int rval = main(argc, argv);
+  myexit(rval);
+}
+
+/* Setup arguments for estart [like main()]. */
+void __attribute__((naked)) _start(void) {
+  asm(" sub     lr, lr, lr\n" /* Clear the link register. */
+      " ldr     r0, [sp]\n"   /* Get argc... */
+      " add     r1, sp, #4\n" /* ... and argv ... */
+      " b       estart\n"     /* Let's go! */
+  );
+}
