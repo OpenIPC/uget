@@ -1,7 +1,7 @@
 # μget
 
 Simple utility to help CI guys do their job in constrained environments to
-download and run binaries in `/tmp`. Size of μget is around 5Kb.
+download and run binaries in `/tmp`. Size of μget is around 4Kb.
 
 ## Features
 
@@ -25,13 +25,20 @@ $ ./uget run openipc.s3-eu-west-1.amazonaws.com/ipc_chip_info
 
 ## Transferring to device using telnet
 
-```sh
+```console
 # on your Linux workstation
-$ ./bin2sh uget > demo.sh
-# login via telnet to embedded device, copy-paste text from demo.sh
+$ ./bin2sh uget > uget.sh
+# login via telnet to embedded device, copy-paste text from uget.sh
 # target binary will reside in /tmp
 $ ./uget example.com
+
+# if target system doesn't support printf use
+$ ./bin2sh -echo uget > uget.sh
 ```
+
+## Demo
+
+[![asciicast](https://asciinema.org/a/QeQTnRudeNPOMW6s1KCZXosf5.svg)](https://asciinema.org/a/QeQTnRudeNPOMW6s1KCZXosf5)
 
 ## Error codes
 
