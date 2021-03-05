@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 const char *trtable[256] = {
     "\\0", // 0
@@ -25,29 +26,42 @@ int printable(char ch) {
 #define SHELL_INPUT_MAX 700
 
 int main(int argc, char **argv) {
-  if (argc != 2) {
-    printf("Usage: %s binary > textfile\n", argv[0]);
+  int printf_mode = 1;
+  const char *input = NULL;
+
+  if (argc == 3) {
+    // treat first argument as optional key
+    if (!strcmp(argv[1], "-echo")) {
+      printf_mode = 0;
+      input = argv[2];
+    }
+  } else if (argc == 2) {
+    input = argv[1];
+  }
+  if (!input) {
+    printf("Usage: %s [-echo] binary > textfile\n", argv[0]);
     exit(EXIT_FAILURE);
   }
 
-  FILE *f = fopen(argv[1], "rb");
+  FILE *f = fopen(input, "rb");
   if (!f) {
-    printf("Error while open %s\n", argv[1]);
+    printf("Error while open %s\n", input);
     exit(EXIT_FAILURE);
   }
 
   unsigned char byte;
 
-  const char *filename = argv[1];
   int line = 0, chout = 0;
   const char *newf = ">";
   const char *exst = ">>";
+  const char *echo_ = "echo -ne \"";
+  const char *printf_ = "printf \"";
 
-  fprintf(stdout, "cd /tmp;F=%s;true>$F;chmod +x $F\n", filename);
+  fprintf(stdout, "cd /tmp;F=%s;true>$F;chmod +x $F\n", input);
 
   while (fread(&byte, 1, sizeof(byte), f)) {
     if (chout == 0) {
-      chout += fprintf(stdout, "printf \"");
+      chout += fprintf(stdout, "%s", printf_mode ? printf_ : echo_);
       line++;
     }
     if (byte == '"')

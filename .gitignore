@@ -1,4 +1,4 @@
 *.o
 uget
 bin2sh
-demo.sh
+uget.sh
