@@ -1,5 +1,5 @@
 CFLAGS=-Os
-CROSS_COMPILE=arm-hisiv510-linux-
+CROSS_COMPILE?=arm-hisiv510-linux-
 CC=$(CROSS_COMPILE)gcc
 STRIP=$(CROSS_COMPILE)strip
 
