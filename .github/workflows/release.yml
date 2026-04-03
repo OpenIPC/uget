@@ -94,3 +94,19 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: uget-*/*
+          body: |
+            ## Which binary do I need?
+
+            | Your SoC | Libc | Binary |
+            |----------|------|--------|
+            | Hi3516Av100, Hi3518Ev200 | uClibc | `uget.arm-hisiv300-linux` |
+            | Hi3516Cv300, Hi3518Ev201 | uClibc | `uget.arm-hisiv500-linux` |
+            | Hi3516Cv300, Hi3518Ev201 | glibc | `uget.arm-hisiv600-linux` |
+            | Hi3516Av200, Hi3519v101 | uClibc | `uget.arm-hisiv510-linux` |
+            | Hi3516Av200, Hi3519v101 | glibc | `uget.arm-hisiv600-linux` |
+            | Hi3516EV200, Hi3516EV300, Hi3518EV300, Hi3516DV200 | uClibc | `uget.arm-himix100-linux` |
+            | Hi3516CV500, Hi3516DV300, Hi3519Av100 | glibc | `uget.arm-himix200-linux` |
+
+            If unsure about libc, try the uClibc variant first — it has fewer dependencies.
+
+            Each binary also has a matching `.sh` file (e.g., `uget.arm-hisiv510-linux.sh`) for transferring via telnet copy-paste.
