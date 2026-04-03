@@ -1,5 +1,3 @@
-#include <stddef.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -18,72 +16,48 @@
 #define ERR_SEND 5
 #define ERR_USAGE 6
 
-#define NDEBUG
+int get_http_respcode(const char *buf) {
+  int i, code = 0;
+  while (*buf && *buf != ' ') buf++;
+  while (*buf == ' ') buf++;
+  for (i = 0; i < 3 && *buf >= '0' && *buf <= '9'; i++)
+    code = code * 10 + (*buf++ - '0');
+  return code ? code : -1;
+}
 
-int get_http_respcode(const char *inpbuf) {
-  char proto[4096], descr[4096];
-  int code;
-
-  if (sscanf(inpbuf, "%s %d %s", proto, &code, descr) < 2)
-    return -1;
-  return code;
+static char *bufcat(char *dst, const char *src) {
+  while (*src) *dst++ = *src++;
+  return dst;
 }
 
 int download(int writefd, char *hostname, char *uri) {
-  int ret = ERR_GENERAL;
-
-  struct addrinfo hints, *res, *res0;
-
-  memset(&hints, 0, sizeof(hints));
-  hints.ai_family = PF_UNSPEC;
-  hints.ai_socktype = SOCK_STREAM;
-  int err = getaddrinfo(hostname, "80", &hints, &res0);
-  if (err) {
-#ifndef NDEBUG
-    fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(err));
-#endif
+  struct hostent *he = gethostbyname(hostname);
+  if (!he)
     return ERR_GETADDRINFO;
-  }
 
-  int s = -1;
-  for (res = res0; res; res = res->ai_next) {
-    s = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
-    if (s < 0) {
-      ret = ERR_SOCKET;
-      continue;
-    }
+  int s = socket(AF_INET, SOCK_STREAM, 0);
+  if (s < 0)
+    return ERR_SOCKET;
 
-#ifndef NDEBUG
-    char buf[256];
-    inet_ntop(res->ai_family, &((struct sockaddr_in *)res->ai_addr)->sin_addr,
-              buf, sizeof(buf));
-    fprintf(stderr, "Connecting to %s...\n", buf);
-#endif
+  struct sockaddr_in addr;
+  memset(&addr, 0, sizeof(addr));
+  addr.sin_family = AF_INET;
+  addr.sin_port = htons(80);
+  memcpy(&addr.sin_addr, he->h_addr, he->h_length);
 
-    if (connect(s, res->ai_addr, res->ai_addrlen) < 0) {
-      ret = ERR_CONNECT;
-      close(s);
-      s = -1;
-      continue;
-    }
-    break; /* okay we got one */
-  }
-  freeaddrinfo(res0);
-
-  if (s < 0) {
-    return ret;
+  if (connect(s, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
+    close(s);
+    return ERR_CONNECT;
   }
 
   char buf[4096];
-  // use the hack to save some space in .rodata
-  strcpy(buf, "GET /");
-  if (uri) {
-    strncat(buf, uri, sizeof(buf) - strlen(buf) - 1);
-  }
-  strncat(buf, " HTTP/1.0\r\nHost: ", sizeof(buf) - strlen(buf) - 1);
-  strncat(buf, hostname, sizeof(buf) - strlen(buf) - 1);
-  strncat(buf, "\r\n\r\n", sizeof(buf) - strlen(buf) - 1);
-  int tosent = strlen(buf);
+  char *p = bufcat(buf, "GET /");
+  if (uri)
+    p = bufcat(p, uri);
+  p = bufcat(p, " HTTP/1.0\r\nHost: ");
+  p = bufcat(p, hostname);
+  p = bufcat(p, "\r\n\r\n");
+  int tosent = p - buf;
   int nsent = send(s, buf, tosent, 0);
   if (nsent != tosent)
     return ERR_SEND;
@@ -157,7 +131,7 @@ int main(int argc, char **argv) {
       wait(&wstatus);
       ret = WEXITSTATUS(wstatus);
     } else {
-      execlp(temfname, temfname, (char *)NULL);
+      execl(temfname, temfname, (char *)NULL);
       return EXIT_FAILURE;
     }
   }

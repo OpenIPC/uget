@@ -35,7 +35,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install dependencies
-        run: sudo apt-get update && sudo apt-get install -y upx-ucl lib32z1 gcc-multilib
+        run: sudo apt-get update && sudo apt-get install -y upx-ucl lib32z1 gcc-multilib qemu-user
 
       - name: Download toolchain
         env:
@@ -65,6 +65,35 @@ jobs:
         run: |
           export PATH="$PWD/${{ matrix.toolchain }}/bin:$PATH"
           make uget CROSS_COMPILE=${{ matrix.cross_compile }}
+
+      - name: Test uget (qemu-arm)
+        run: |
+          SYSROOT=$(find ${{ matrix.toolchain }} -type d -name target | head -1)
+          echo "Using sysroot: $SYSROOT"
+          QEMU="qemu-arm -L $SYSROOT"
+          fail=0
+
+          echo -n "Test: no args (expect rc=6)... "
+          rc=0; $QEMU ./uget 2>/dev/null || rc=$?
+          [ "$rc" -eq 6 ] && echo "PASS" || { echo "FAIL (rc=$rc)"; fail=1; }
+
+          echo -n "Test: bad args (expect rc=6)... "
+          rc=0; $QEMU ./uget foo bar 2>/dev/null || rc=$?
+          [ "$rc" -eq 6 ] && echo "PASS" || { echo "FAIL (rc=$rc)"; fail=1; }
+
+          echo -n "Test: HTTP GET httpbin.org/get... "
+          rc=0; out=$($QEMU ./uget httpbin.org/get 2>/dev/null) || rc=$?
+          if [ "$rc" -eq 0 ] && echo "$out" | grep -q '"Host"'; then
+            echo "PASS"
+          else
+            echo "FAIL (rc=$rc)"; fail=1
+          fi
+
+          echo -n "Test: HTTP 404 (expect rc=44)... "
+          rc=0; $QEMU ./uget httpbin.org/status/404 2>/dev/null || rc=$?
+          [ "$rc" -eq 44 ] && echo "PASS" || { echo "FAIL (rc=$rc)"; fail=1; }
+
+          exit $fail
 
       - name: Generate uget.sh
         run: ./bin2sh uget > uget.sh
