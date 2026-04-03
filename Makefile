@@ -5,7 +5,7 @@ CC=$(CROSS_COMPILE)gcc
 STRIP=$(CROSS_COMPILE)strip
 STRIP_FLAGS=-R .comment -R .note -R .note.ABI-tag -R .eh_frame -R .eh_frame_hdr -R .ARM.attributes -R .jcr
 
-BINARIES=uget bin2sh
+BINARIES=uget uget-asm bin2sh
 
 all: $(BINARIES)
 
@@ -14,8 +14,14 @@ uget: uget.o
 	$(STRIP) $(STRIP_FLAGS) $@
 	-upx $@
 
+uget-asm: uget.S
+	$(CC) -c -o uget-asm.o $^
+	$(CC) -nostartfiles -o $@ uget-asm.o -lc
+	$(STRIP) $(STRIP_FLAGS) $@
+	-upx $@
+
 bin2sh: bin2sh.c
 	cc -o $@ $^
 
 clean:
-	-rm -f uget $(BINARIES) *.o
+	-rm -f $(BINARIES) *.o

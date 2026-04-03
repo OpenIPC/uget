@@ -1,8 +1,19 @@
 # uget
 
-Minimal (~4 KB) HTTP download utility for constrained embedded Linux environments
+Minimal HTTP download utility for constrained embedded Linux environments
 such as HiSilicon-based IP cameras. Works as a lightweight `curl`/`wget`
 replacement when binary size matters.
+
+Two variants are provided:
+
+| Variant | Size | Description |
+|---------|------|-------------|
+| `uget` | ~4.7 KB | C version — portable, easy to modify |
+| `uget-asm` | ~2.6 KB | ARM32 assembly — smallest possible, uses raw syscalls |
+
+Both are functionally identical. The assembly version eliminates CRT startup
+overhead and uses Linux syscalls directly, keeping only `gethostbyname` and
+`mkstemp` from libc.
 
 Pre-built binaries for all supported platforms are available on the
 [Releases](https://github.com/OpenIPC/uget/releases/latest) page.
@@ -52,11 +63,17 @@ Requires a HiSilicon cross-compiler and `upx`. See the
 cross-compilers.
 
 ```sh
-# Cross-compile (default: arm-hisiv510-linux-)
+# Cross-compile both variants (default: arm-hisiv510-linux-)
 make
 
 # Cross-compile with a different toolchain
 make CROSS_COMPILE=arm-hisiv500-linux-uclibcgnueabi-
+
+# Build only the C version
+make uget
+
+# Build only the assembly version
+make uget-asm
 
 # Build bin2sh only (native, no cross-compiler needed)
 make bin2sh
