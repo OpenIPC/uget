@@ -1,0 +1,93 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - toolchain: arm-hisiv300-linux
+            archive: arm-hisiv300-linux.tar.bz2
+            cross_compile: arm-hisiv300-linux-uclibcgnueabi-
+          - toolchain: arm-hisiv500-linux
+            archive: arm-hisiv500-linux.tgz
+            cross_compile: arm-hisiv500-linux-uclibcgnueabi-
+          - toolchain: arm-hisiv510-linux
+            archive: arm-hisiv510-linux.tgz
+            cross_compile: arm-hisiv510-linux-uclibcgnueabi-
+          - toolchain: arm-hisiv600-linux
+            archive: arm-hisiv600-linux.tgz
+            cross_compile: arm-hisiv600-linux-gnueabi-
+          - toolchain: arm-himix100-linux
+            archive: arm-himix100-linux.tgz
+            cross_compile: arm-himix100-linux-
+          - toolchain: arm-himix200-linux
+            archive: arm-himix200-linux.tgz
+            cross_compile: arm-himix200-linux-
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install upx
+        run: sudo apt-get update && sudo apt-get install -y upx-ucl
+
+      - name: Download toolchain
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ "${{ matrix.toolchain }}" = "arm-himix200-linux" ]; then
+            gh release download v1 -R OpenIPC/toolchains -p 'arm-himix200-linux.tgz.part*'
+            cat arm-himix200-linux.tgz.part* > arm-himix200-linux.tgz
+            rm arm-himix200-linux.tgz.part*
+          else
+            gh release download v1 -R OpenIPC/toolchains -p '${{ matrix.archive }}'
+          fi
+
+      - name: Extract toolchain
+        run: |
+          if [ "${{ matrix.archive }}" = "arm-hisiv300-linux.tar.bz2" ]; then
+            tar xjf arm-hisiv300-linux.tar.bz2
+          else
+            tar xzf ${{ matrix.toolchain }}.tgz
+            tar xjf ${{ matrix.toolchain }}/${{ matrix.toolchain }}.tar.bz2
+          fi
+
+      - name: Build bin2sh (native)
+        run: make bin2sh
+
+      - name: Build uget (cross-compile)
+        run: |
+          export PATH="$PWD/${{ matrix.toolchain }}/bin:$PATH"
+          make uget CROSS_COMPILE=${{ matrix.cross_compile }}
+
+      - name: Generate uget.sh
+        run: ./bin2sh uget > uget.sh
+
+      - name: Rename artifacts
+        run: |
+          mv uget uget.${{ matrix.toolchain }}
+          mv uget.sh uget.${{ matrix.toolchain }}.sh
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: uget-${{ matrix.toolchain }}
+          path: |
+            uget.${{ matrix.toolchain }}
+            uget.${{ matrix.toolchain }}.sh
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: uget-*/*
