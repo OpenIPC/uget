@@ -10,6 +10,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         include:
           - toolchain: arm-hisiv300-linux
@@ -33,8 +34,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install upx
-        run: sudo apt-get update && sudo apt-get install -y upx-ucl
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y upx-ucl lib32z1 gcc-multilib
 
       - name: Download toolchain
         env:
