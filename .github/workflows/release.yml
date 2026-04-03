@@ -66,6 +66,11 @@ jobs:
           export PATH="$PWD/${{ matrix.toolchain }}/bin:$PATH"
           make uget CROSS_COMPILE=${{ matrix.cross_compile }}
 
+      - name: Build uget-asm (cross-compile)
+        run: |
+          export PATH="$PWD/${{ matrix.toolchain }}/bin:$PATH"
+          make uget-asm CROSS_COMPILE=${{ matrix.cross_compile }}
+
       - name: Test uget (qemu-arm)
         run: |
           SYSROOT=$(find ${{ matrix.toolchain }} -type d -name target | head -1)
@@ -95,13 +100,45 @@ jobs:
 
           exit $fail
 
-      - name: Generate uget.sh
-        run: ./bin2sh uget > uget.sh
+      - name: Test uget-asm (qemu-arm)
+        run: |
+          SYSROOT=$(find ${{ matrix.toolchain }} -type d -name target | head -1)
+          QEMU="qemu-arm -L $SYSROOT"
+          fail=0
+
+          echo -n "Test: no args (expect rc=6)... "
+          rc=0; $QEMU ./uget-asm 2>/dev/null || rc=$?
+          [ "$rc" -eq 6 ] && echo "PASS" || { echo "FAIL (rc=$rc)"; fail=1; }
+
+          echo -n "Test: bad args (expect rc=6)... "
+          rc=0; $QEMU ./uget-asm foo bar 2>/dev/null || rc=$?
+          [ "$rc" -eq 6 ] && echo "PASS" || { echo "FAIL (rc=$rc)"; fail=1; }
+
+          echo -n "Test: HTTP GET httpbin.org/get... "
+          rc=0; out=$($QEMU ./uget-asm httpbin.org/get 2>/dev/null) || rc=$?
+          if [ "$rc" -eq 0 ] && echo "$out" | grep -q '"Host"'; then
+            echo "PASS"
+          else
+            echo "FAIL (rc=$rc)"; fail=1
+          fi
+
+          echo -n "Test: HTTP 404 (expect rc=44)... "
+          rc=0; $QEMU ./uget-asm httpbin.org/status/404 2>/dev/null || rc=$?
+          [ "$rc" -eq 44 ] && echo "PASS" || { echo "FAIL (rc=$rc)"; fail=1; }
+
+          exit $fail
+
+      - name: Generate shell scripts
+        run: |
+          ./bin2sh uget > uget.sh
+          ./bin2sh uget-asm > uget-asm.sh
 
       - name: Rename artifacts
         run: |
           mv uget uget.${{ matrix.toolchain }}
           mv uget.sh uget.${{ matrix.toolchain }}.sh
+          mv uget-asm uget-asm.${{ matrix.toolchain }}
+          mv uget-asm.sh uget-asm.${{ matrix.toolchain }}.sh
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
@@ -110,6 +147,8 @@ jobs:
           path: |
             uget.${{ matrix.toolchain }}
             uget.${{ matrix.toolchain }}.sh
+            uget-asm.${{ matrix.toolchain }}
+            uget-asm.${{ matrix.toolchain }}.sh
 
   release:
     if: startsWith(github.ref, 'refs/tags/')
@@ -139,3 +178,5 @@ jobs:
             If unsure about libc, try the uClibc variant first — it has fewer dependencies.
 
             Each binary also has a matching `.sh` file (e.g., `uget.arm-hisiv510-linux.sh`) for transferring via telnet copy-paste.
+
+            There is also an `uget-asm` variant (~2.6 KB) hand-written in ARM32 assembly. It is functionally identical but smaller — use it when every byte counts.
