@@ -10,7 +10,7 @@ all: $(BINARIES)
 uget: uget.o
 	$(CC) $(CFLAGS) -o $@ $^
 	$(STRIP) -R .comment -R .note -R .note.ABI-tag $@
-	upx $@
+	-upx $@
 
 bin2sh: bin2sh.c
 	cc -o $@ $^
